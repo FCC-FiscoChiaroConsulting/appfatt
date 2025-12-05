@@ -41,7 +41,6 @@ CLIENTI_COLONNE = [
 if "documenti_emessi" not in st.session_state:
     st.session_state.documenti_emessi = pd.DataFrame(columns=COLONNE_DOC)
 else:
-    # garantisco la presenza di tutte le colonne
     for col in COLONNE_DOC:
         if col not in st.session_state.documenti_emessi.columns:
             st.session_state.documenti_emessi[col] = (
@@ -61,7 +60,6 @@ else:
 # FUNZIONI UTILI
 # ==========================
 def _format_val_eur(val: float) -> str:
-    """Formatta un valore numerico in stile euro italiano."""
     return (
         f"{val:,.2f}"
         .replace(",", "X")
@@ -71,7 +69,6 @@ def _format_val_eur(val: float) -> str:
 
 
 def mostra_anteprima_pdf(pdf_bytes: bytes, altezza: int = 600) -> None:
-    """Mostra un PDF embedded in-page."""
     b64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
     pdf_display = f"""
 <iframe src="data:application/pdf;base64,{b64_pdf}"
@@ -103,7 +100,6 @@ def get_next_invoice_number() -> str:
 
 
 def crea_riepilogo_fatture_emesse(df: pd.DataFrame) -> None:
-    """Prospetto riepilogativo mensile/trimestrale/annuale delle fatture emesse."""
     if df.empty:
         st.info("Nessuna fattura emessa per creare il riepilogo.")
         return
@@ -130,18 +126,9 @@ def crea_riepilogo_fatture_emesse(df: pd.DataFrame) -> None:
     df_anno = df[df["Data"].dt.year == anno_sel]
 
     mesi_label = [
-        "Gennaio",
-        "Febbraio",
-        "Marzo",
-        "Aprile",
-        "Maggio",
-        "Giugno",
-        "Luglio",
-        "Agosto",
-        "Settembre",
-        "Ottobre",
-        "Novembre",
-        "Dicembre",
+        "Gennaio", "Febbraio", "Marzo", "Aprile",
+        "Maggio", "Giugno", "Luglio", "Agosto",
+        "Settembre", "Ottobre", "Novembre", "Dicembre",
     ]
 
     rows = []
@@ -204,6 +191,12 @@ def crea_riepilogo_fatture_emesse(df: pd.DataFrame) -> None:
 # ==========================
 # HEADER
 # ==========================
+st.set_page_config(
+    page_title="Documenti - Fatture Emesse",
+    page_icon="📄",
+    layout="wide",
+)
+
 col_logo, col_menu, col_user = st.columns([2, 5, 1])
 with col_logo:
     st.markdown(
@@ -218,6 +211,12 @@ with col_user:
 st.markdown("---")
 st.subheader("Lista documenti / Fatture emesse")
 
+# Bottone Nuova fattura
+col_nuova, _ = st.columns([1, 5])
+with col_nuova:
+    if st.button("➕ Nuova fattura"):
+        st.switch_page("03_Fattura.py")
+
 # ==========================
 # CONTATORI PER MESE
 # ==========================
@@ -231,10 +230,6 @@ if not df_tmp.empty:
 # ==========================
 # BARRA SUPERIORE TIPO EFFATTA
 # ==========================
-barra_ricerca = ""
-tabs = None
-idx_mese = date.today().month
-
 col_search, col_stato, col_emesse, col_ricevute, col_agg = st.columns(
     [4, 1, 1, 1, 1]
 )
@@ -245,30 +240,20 @@ with col_search:
         label_visibility="collapsed",
     )
 with col_stato:
-    # Se hai un'app multipagina puoi usare st.switch_page("app.py") o nome pagina
     if st.button("STATO"):
-        st.switch_page("app.py")  # oppure il nome che stai usando per la dashboard
+        st.switch_page("app.py")
 with col_emesse:
-    # sei già sulla vista EMESSE
-    st.button("EMESSE")
+    st.button("EMESSE")  # siamo su EMESSE
 with col_ricevute:
-    st.button("RICEVUTE")  # placeholder
+    if st.button("RICEVUTE"):
+        st.info("Sezione RICEVUTE non ancora implementata.")
 with col_agg:
     st.button("AGGIORNA")
 
 nomi_mesi = [
-    "Gennaio",
-    "Febbraio",
-    "Marzo",
-    "Aprile",
-    "Maggio",
-    "Giugno",
-    "Luglio",
-    "Agosto",
-    "Settembre",
-    "Ottobre",
-    "Novembre",
-    "Dicembre",
+    "Gennaio", "Febbraio", "Marzo", "Aprile",
+    "Maggio", "Giugno", "Luglio", "Agosto",
+    "Settembre", "Ottobre", "Novembre", "Dicembre",
 ]
 
 mesi = ["Riepilogo"]
