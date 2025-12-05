@@ -469,17 +469,17 @@ else:
                                     ignore_index=True,
                                 )
                                 st.success(f"Fattura duplicata come {nuovo_num}.")
-                                st.experimental_rerun()
+                                st.rerun()  # ✅ aggiornato
 
                             # Elimina
                             if st.button("🗑 Elimina", key=f"del_{row_index}"):
                                 st.session_state.documenti_emessi = (
-                                    st.session_state.documenti_emessi.drop(
-                                        row_index
-                                    ).reset_index(drop=True)
+                                    st.session_state.documenti_emessi
+                                    .drop(row_index)
+                                    .reset_index(drop=True)
                                 )
                                 st.warning("Fattura eliminata.")
-                                st.experimental_rerun()
+                                st.rerun()  # ✅ aggiornato
 
                             # Invia (placeholder)
                             if st.button("📨 Invia", key=f"inv_{row_index}"):
