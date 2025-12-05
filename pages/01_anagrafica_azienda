@@ -1,0 +1,288 @@
+import streamlit as st
+import json
+import os
+
+# -------------------------------------------------------
+# Config generale pagina (titolo e larghezza)
+# -------------------------------------------------------
+st.set_page_config(page_title="Anagrafica Azienda", layout="wide")
+
+# File locale in cui salvo i dati dell'azienda
+DATA_FILE = "azienda.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_data(data: dict):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+saved = load_data()
+
+# -------------------------------------------------------
+# CSS per dare lo stile "Effatta"
+# -------------------------------------------------------
+st.markdown(
+    """
+    <style>
+    .main > div {
+        padding-top: 1rem;
+    }
+    .app-wrapper {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+    .ef-box {
+        border: 1px solid #dde2eb;
+        background-color: #f8fafc;
+        padding: 16px 20px 14px 20px;
+        border-radius: 4px;
+        margin-bottom: 18px;
+    }
+    .ef-box-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+    }
+    .ef-section-spacer {
+        margin-top: 4px;
+    }
+    .ef-footer-note {
+        font-size: 11px;
+        color: #6b7280;
+        margin-top: 8px;
+    }
+    .ef-save-button .stButton>button {
+        background-color: #2563eb;
+        color: white;
+        font-weight: 600;
+        padding: 0.4rem 2.4rem;
+        border-radius: 4px;
+        border: none;
+    }
+    .ef-save-button .stButton>button:hover {
+        background-color: #1d4ed8;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# -------------------------------------------------------
+# HEADER
+# -------------------------------------------------------
+st.markdown("<div class='app-wrapper'>", unsafe_allow_html=True)
+
+st.title("📁 Anagrafica aziendale")
+st.caption("Compila i dati aziendali una sola volta. Verranno riutilizzati per tutte le fatture.")
+
+st.markdown("<div class='ef-section-spacer'></div>", unsafe_allow_html=True)
+
+# =======================================================
+# 1) DATI FISCALI AZIENDA
+# =======================================================
+st.markdown("<div class='ef-box'>", unsafe_allow_html=True)
+st.markdown("<div class='ef-box-title'>Dati fiscali azienda</div>", unsafe_allow_html=True)
+
+c1, c2, c3 = st.columns(3)
+
+denominazione = c1.text_input(
+    "Denominazione / Ragione sociale",
+    value=saved.get("denominazione", ""),
+)
+piva = c2.text_input(
+    "Partita IVA",
+    value=saved.get("piva", ""),
+)
+codice_fiscale = c3.text_input(
+    "Codice fiscale",
+    value=saved.get("codice_fiscale", ""),
+)
+
+regime_options = [
+    "RF01 - Ordinario",
+    "RF19 - Forfettario",
+    "RF02 - Minimi",
+]
+regime_index = 0
+if "regime" in saved and saved["regime"] in regime_options:
+    regime_index = regime_options.index(saved["regime"])
+
+regime = c1.selectbox(
+    "Regime fiscale",
+    options=regime_options,
+    index=regime_index,
+)
+
+codice_dest = c2.text_input(
+    "Codice destinatario SDI",
+    value=saved.get("codice_dest", ""),
+)
+pec = c3.text_input(
+    "PEC per fatturazione elettronica",
+    value=saved.get("pec", ""),
+)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# =======================================================
+# 2) SEDE LEGALE / DOMICILIO FISCALE
+# =======================================================
+st.markdown("<div class='ef-box'>", unsafe_allow_html=True)
+st.markdown("<div class='ef-box-title'>Sede legale / domicilio fiscale</div>", unsafe_allow_html=True)
+
+c1, c2, c3 = st.columns(3)
+
+indirizzo = c1.text_input(
+    "Indirizzo (via/piazza e numero civico)",
+    value=saved.get("indirizzo", ""),
+)
+cap = c2.text_input(
+    "CAP",
+    value=saved.get("cap", ""),
+)
+comune = c3.text_input(
+    "Comune",
+    value=saved.get("comune", ""),
+)
+
+provincia = c1.text_input(
+    "Provincia",
+    value=saved.get("provincia", ""),
+)
+nazione = c2.text_input(
+    "Nazione",
+    value=saved.get("nazione", "Italia"),
+)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# =======================================================
+# 3) RAPPRESENTANTE LEGALE
+# =======================================================
+st.markdown("<div class='ef-box'>", unsafe_allow_html=True)
+st.markdown("<div class='ef-box-title'>Rappresentante legale</div>", unsafe_allow_html=True)
+
+c1, c2, c3 = st.columns(3)
+
+rl_nome = c1.text_input(
+    "Nome",
+    value=saved.get("rl_nome", ""),
+)
+rl_cognome = c2.text_input(
+    "Cognome",
+    value=saved.get("rl_cognome", ""),
+)
+rl_cf = c3.text_input(
+    "Codice fiscale",
+    value=saved.get("rl_cf", ""),
+)
+
+rl_email = c1.text_input(
+    "Email",
+    value=saved.get("rl_email", ""),
+)
+rl_tel = c2.text_input(
+    "Telefono",
+    value=saved.get("rl_tel", ""),
+)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# =======================================================
+# 4) MODALITÀ DI PAGAMENTO
+# =======================================================
+st.markdown("<div class='ef-box'>", unsafe_allow_html=True)
+st.markdown("<div class='ef-box-title'>Dati pagamento (predefiniti per le fatture)</div>", unsafe_allow_html=True)
+
+c1, c2 = st.columns(2)
+
+pagamento_options = ["Bonifico bancario", "Contanti", "Assegno", "Altro"]
+pagamento_index = 0
+if "pagamento" in saved and saved["pagamento"] in pagamento_options:
+    pagamento_index = pagamento_options.index(saved["pagamento"])
+
+pagamento = c1.selectbox(
+    "Modalità di pagamento",
+    options=pagamento_options,
+    index=pagamento_index,
+)
+
+iban = c1.text_input(
+    "IBAN",
+    value=saved.get("iban", ""),
+)
+banca = c2.text_input(
+    "Banca / Istituto di credito",
+    value=saved.get("banca", ""),
+)
+
+st.markdown(
+    "<div class='ef-footer-note'>Questi dati verranno proposti automaticamente nella sezione pagamenti della fattura.</div>",
+    unsafe_allow_html=True,
+)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# =======================================================
+# 5) CONSENSI / PRIVACY
+# =======================================================
+st.markdown("<div class='ef-box'>", unsafe_allow_html=True)
+st.markdown("<div class='ef-box-title'>Consensi e privacy</div>", unsafe_allow_html=True)
+
+c1, c2 = st.columns(2)
+
+privacy = c1.checkbox(
+    "Ho letto e accetto l'informativa privacy",
+    value=bool(saved.get("privacy", False)),
+)
+marketing = c1.checkbox(
+    "Acconsento a ricevere comunicazioni informative / promozionali",
+    value=bool(saved.get("marketing", False)),
+)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+# =======================================================
+# SALVATAGGIO
+# =======================================================
+st.markdown("<div class='ef-save-button'>", unsafe_allow_html=True)
+if st.button("SALVA ANAGRAFICA"):
+    data = {
+        "denominazione": denominazione,
+        "piva": piva,
+        "codice_fiscale": codice_fiscale,
+        "regime": regime,
+        "codice_dest": codice_dest,
+        "pec": pec,
+        "indirizzo": indirizzo,
+        "cap": cap,
+        "comune": comune,
+        "provincia": provincia,
+        "nazione": nazione,
+        "rl_nome": rl_nome,
+        "rl_cognome": rl_cognome,
+        "rl_cf": rl_cf,
+        "rl_email": rl_email,
+        "rl_tel": rl_tel,
+        "pagamento": pagamento,
+        "iban": iban,
+        "banca": banca,
+        "privacy": privacy,
+        "marketing": marketing,
+    }
+    save_data(data)
+    st.success("✅ Anagrafica aziendale salvata correttamente.")
+st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("</div>", unsafe_allow_html=True)  # chiusura .app-wrapper
+
