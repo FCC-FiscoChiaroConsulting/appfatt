@@ -3,6 +3,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from io import BytesIO
+import base64
 
 # ------------------------------------------
 # FUNZIONE PER GENERARE IL PDF
@@ -29,12 +30,10 @@ def genera_pdf_fattura(dati):
     c.drawString(x_left, y-60, f"PARTITA IVA {dati['azienda_piva']}")
 
     # --------------------------
-    # INTESTAZIONE CLIENTE (a destra)
+    # INTESTAZIONE CLIENTE
     # --------------------------
     c.setFont("Helvetica-Bold", 12)
     c.drawRightString(565, y, "Spett.le")
-
-    c.setFont("Helvetica-Bold", 12)
     c.drawRightString(565, y-15, dati["cliente_nome"])
 
     c.setFont("Helvetica", 10)
@@ -43,7 +42,7 @@ def genera_pdf_fattura(dati):
     c.drawRightString(565, y-60, f"PARTITA IVA {dati['cliente_piva']}")
 
     # --------------------------
-    # SEZIONE DATI DOCUMENTO
+    # DATI DOCUMENTO
     # --------------------------
     y = 700
     c.setFont("Helvetica-Bold", 11)
@@ -64,7 +63,7 @@ def genera_pdf_fattura(dati):
     c.drawString(x_left+120, y-80, dati["causale"])
 
     # --------------------------
-    # SEZIONE DATI TRASMISSIONE
+    # DATI TRASMISSIONE
     # --------------------------
     c.setFont("Helvetica-Bold", 11)
     c.drawString(x_right, y, "DATI TRASMISSIONE")
@@ -78,7 +77,7 @@ def genera_pdf_fattura(dati):
     c.drawString(x_right+140, y-40, dati["pec_destinatario"])
 
     # --------------------------
-    # DETTAGLIO DOCUMENTO (riga fattura)
+    # DETTAGLIO FATTURA
     # --------------------------
     y = 560
     c.setFont("Helvetica-Bold", 11)
@@ -104,7 +103,7 @@ def genera_pdf_fattura(dati):
     c.drawString(x_left+450, y, str(dati["iva_percentuale"]))
 
     # --------------------------
-    # RIEPILOGO IMPORTI
+    # RIEPILOGO
     # --------------------------
     y -= 60
     c.setFont("Helvetica-Bold", 10)
@@ -115,19 +114,19 @@ def genera_pdf_fattura(dati):
     c.drawString(x_left, y, f"IVA (SU € {dati['imponibile']}) + {dati['iva_valore']}")
     y -= 15
     c.drawString(x_left, y, f"IMPORTO TOTALE = {dati['totale']}")
+
     y -= 15
     c.setFont("Helvetica-Bold", 12)
     c.setFillColor(colors.blue)
     c.drawString(x_left, y, f"NETTO A PAGARE = {dati['totale']}")
-
     c.setFillColor(colors.black)
 
-    # --------------------------
-    # NOTA FINALE
-    # --------------------------
+    # Nota finale
     c.setFont("Helvetica", 8)
-    c.drawString(100, 50, 
-        "Copia di cortesia priva di valore ai fini fiscali e giuridici - Art. 21 DPR 633/72")
+    c.drawString(
+        100, 50,
+        "Copia di cortesia priva di valore ai fini fiscali - Art. 21 DPR 633/72"
+    )
 
     c.save()
     buffer.seek(0)
@@ -135,11 +134,24 @@ def genera_pdf_fattura(dati):
 
 
 # ------------------------------------------
-# STREAMLIT — FORM E ANTEPRIMA
+# FUNZIONE PER MOSTRARE IL PDF IN STREAMLIT
 # ------------------------------------------
-st.title("Creazione fattura PDF")
+def mostra_pdf(buffer):
+    pdf_bytes = buffer.getvalue()
+    b64 = base64.b64encode(pdf_bytes).decode()
+    pdf_display = f"""
+        <iframe width="100%" height="600"
+        src="data:application/pdf;base64,{b64}" type="application/pdf"></iframe>
+    """
+    st.markdown(pdf_display, unsafe_allow_html=True)
 
-# Esempio dati
+
+# ------------------------------------------
+# STREAMLIT – PAGINA DI TEST
+# ------------------------------------------
+st.title("Anteprima generatore fattura PDF")
+
+# Dati esempio
 dati = {
     "azienda_nome": "GLOBAL BUSINESS SRL",
     "azienda_indirizzo": "VIA CARULLI 90",
@@ -172,9 +184,10 @@ dati = {
     "totale": "500,00"
 }
 
-pdf = genera_pdf_fattura(dati)
+pdf_buffer = genera_pdf_fattura(dati)
 
-# ANTEPRIMA PDF
+st.subheader("Download PDF")
+st.download_button("Scarica PDF", data=pdf_buffer.getvalue(), file_name="fattura.pdf")
+
 st.subheader("Anteprima PDF")
-st.download_button("Scarica PDF", data=pdf, file_name="fattura.pdf", mime="application/pdf")
-st.pdf(pdf)
+mostra_pdf(pdf_buffer)
