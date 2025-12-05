@@ -2,3 +2,4 @@ streamlit
 pandas
 fpdf2
 python-dateutil
+streamlit>=1.30,<2
