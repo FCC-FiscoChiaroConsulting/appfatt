@@ -1,14 +1,18 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Gestionale Fatture", layout="wide")
+# Config pagina
+st.set_page_config(
+    page_title="Anagrafica Azienda",
+    page_icon="📇",
+    layout="wide",
+)
+
+PRIMARY_BLUE = "#1f77b4"
 
 # ==============================
 # STATO INIZIALE
 # ==============================
-if "page" not in st.session_state:
-    st.session_state.page = "dashboard"
-
 if "anagrafica" not in st.session_state:
     st.session_state.anagrafica = {
         "Ragione Sociale": "",
@@ -19,68 +23,66 @@ if "anagrafica" not in st.session_state:
         "Comune": "",
         "Provincia": "",
         "PEC": "",
-        "Codice Destinatario": ""
+        "Codice Destinatario": "",
     }
 
 # ==============================
-# MENU IN ALTO A DESTRA
+# HEADER
 # ==============================
-st.markdown("""
-    <style>
-        .top-right-menu {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 16px;
-        }
-        .menu-item {
-            cursor: pointer;
-            color: #1f77b4;
-            font-weight: 600;
-        }
-        .menu-item:hover {
-            text-decoration: underline;
-        }
-    </style>
-    <div class="top-right-menu">
-        <span class="menu-item" onclick="window.location.href='?anagrafica'">Operatore ▾</span>
-    </div>
-""", unsafe_allow_html=True)
+col_logo, col_menu, col_user = st.columns([2, 5, 1])
+with col_logo:
+    st.markdown(
+        f"<h1 style='color:{PRIMARY_BLUE};margin-bottom:0'>FISCO CHIARO CONSULTING</h1>",
+        unsafe_allow_html=True,
+    )
+with col_menu:
+    st.markdown("#### Anagrafica azienda | Documenti | Dashboard")
+with col_user:
+    # Siamo già sulla pagina operatore/anagrafica
+    st.button("Operatore")
+
+st.markdown("---")
+
+col_back, _ = st.columns([1, 5])
+with col_back:
+    if st.button("⬅ Torna alla Dashboard"):
+        st.switch_page("app.py")
 
 # ==============================
-# CONTROLLO CLICK MENU
+# PAGINA ANAGRAFICA
 # ==============================
-query_params = st.query_params
+st.title("📇 Anagrafica Azienda")
 
-if "anagrafica" in query_params:
-    st.session_state.page = "anagrafica"
+st.markdown("Compila i dati della tua azienda. Verranno riutilizzati per le fatture.")
 
-# ==============================
-# FUNZIONE PAGINA ANAGRAFICA
-# ==============================
-def pagina_anagrafica():
-    st.title("📇 Anagrafica Azienda")
-
+with st.form("form_anagrafica"):
     for campo, valore in st.session_state.anagrafica.items():
         st.session_state.anagrafica[campo] = st.text_input(
             campo,
-            value=valore
+            value=valore,
         )
 
-    if st.button("💾 Salva Anagrafica"):
-        st.success("Anagrafica salvata correttamente!")
+    salvato = st.form_submit_button("💾 Salva Anagrafica")
 
-# ==============================
-# FUNZIONE DASHBOARD
-# ==============================
-def dashboard():
-    st.title("Dashboard Documenti")
-    st.info("Qui vedrai le fatture, documenti e notifiche.")
+if salvato:
+    st.success("Anagrafica salvata correttamente in memoria dell'app.")
 
-# ==============================
-# ROUTER PAGINE
-# ==============================
-if st.session_state.page == "anagrafica":
-    pagina_anagrafica()
-else:
-    dashboard()
+# Card riepilogo
+st.markdown("---")
+st.subheader("Riepilogo anagrafica")
+
+ana = st.session_state.anagrafica
+
+col1, col2 = st.columns(2)
+with col1:
+    st.write(f"**Ragione Sociale**: {ana['Ragione Sociale']}")
+    st.write(f"**P.IVA**: {ana['P.IVA']}")
+    st.write(f"**CF**: {ana['CF']}")
+    st.write(f"**PEC**: {ana['PEC']}")
+with col2:
+    st.write(f"**Indirizzo**: {ana['Indirizzo']}")
+    st.write(f"**CAP**: {ana['CAP']}")
+    st.write(f"**Comune**: {ana['Comune']} ({ana['Provincia']})")
+    st.write(f"**Codice Destinatario**: {ana['Codice Destinatario']}")
+
+st.caption("I dati rimangono caricati finché la sessione Streamlit è attiva.")
