@@ -1,78 +1,38 @@
 import streamlit as st
 import pandas as pd
 
-# Config pagina
-st.set_page_config(
-    page_title="Anagrafica Azienda",
-    page_icon="📇",
-    layout="wide",
-)
-
+st.set_page_config(page_title="Anagrafica Azienda", page_icon="📇", layout="wide")
 PRIMARY_BLUE = "#1f77b4"
 
-# ==============================
-# STATO INIZIALE
-# ==============================
 if "anagrafica" not in st.session_state:
     st.session_state.anagrafica = {
-        "Ragione Sociale": "",
-        "P.IVA": "",
-        "CF": "",
-        "Indirizzo": "",
-        "CAP": "",
-        "Comune": "",
-        "Provincia": "",
-        "PEC": "",
-        "Codice Destinatario": "",
+        "Ragione Sociale": "", "P.IVA": "", "CF": "", "Indirizzo": "",
+        "CAP": "", "Comune": "", "Provincia": "", "PEC": "", "Codice Destinatario": ""
     }
 
-# ==============================
-# HEADER
-# ==============================
 col_logo, col_menu, col_user = st.columns([2, 5, 1])
 with col_logo:
-    st.markdown(
-        f"<h1 style='color:{PRIMARY_BLUE};margin-bottom:0'>FISCO CHIARO CONSULTING</h1>",
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<h1 style="color:{PRIMARY_BLUE};margin-bottom:0;">FISCO CHIARO CONSULTING</h1>', unsafe_allow_html=True)
 with col_menu:
-    st.markdown("#### Anagrafica azienda | Documenti | Dashboard")
+    st.markdown("Anagrafica azienda | Documenti | Dashboard")
 with col_user:
-    # Siamo già sulla pagina operatore/anagrafica
     st.button("Operatore")
 
 st.markdown("---")
-
-col_back, _ = st.columns([1, 5])
-with col_back:
-    if st.button("⬅ Torna alla Dashboard"):
-        st.switch_page("app.py")
-
-# ==============================
-# PAGINA ANAGRAFICA
-# ==============================
-st.title("📇 Anagrafica Azienda")
-
+st.title("Anagrafica Azienda")
 st.markdown("Compila i dati della tua azienda. Verranno riutilizzati per le fatture.")
 
 with st.form("form_anagrafica"):
     for campo, valore in st.session_state.anagrafica.items():
-        st.session_state.anagrafica[campo] = st.text_input(
-            campo,
-            value=valore,
-        )
-
-    salvato = st.form_submit_button("💾 Salva Anagrafica")
+        st.session_state.anagrafica[campo] = st.text_input(campo, value=valore)
+    salvato = st.form_submit_button("Salva Anagrafica")
 
 if salvato:
     st.success("Anagrafica salvata correttamente in memoria dell'app.")
 
-# Card riepilogo
 st.markdown("---")
 st.subheader("Riepilogo anagrafica")
-
 ana = st.session_state.anagrafica
-
 col1, col2 = st.columns(2)
 with col1:
     st.write(f"**Ragione Sociale**: {ana['Ragione Sociale']}")
