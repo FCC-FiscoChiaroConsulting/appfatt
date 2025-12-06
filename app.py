@@ -59,7 +59,6 @@ else:
         if col not in st.session_state.clienti.columns:
             st.session_state.clienti[col] = ""
 
-
 # ==========================
 # HEADER
 # ==========================
@@ -93,7 +92,7 @@ with col_stato:
 
 with col_emesse:
     if st.button("EMESSE"):
-        st.switch_page("02_Documenti.py")
+        st.switch_page("pages/02_Documenti.py")
 
 with col_ricevute:
     if st.button("RICEVUTE"):
@@ -101,7 +100,6 @@ with col_ricevute:
 
 with col_agg:
     st.button("AGGIORNA")
-
 
 # ==========================
 # CONTENUTO DASHBOARD
@@ -111,10 +109,11 @@ st.subheader("Stato generale")
 df = st.session_state.documenti_emessi
 
 if df.empty:
-    st.info("Non ci sono ancora documenti emessi. Crea la prima fattura dalla sezione EMESSE.")
+    st.info(
+        "Non ci sono ancora documenti emessi. Crea la prima fattura dalla sezione EMESSE."
+    )
 else:
     df_copy = df.copy()
-    # Conversione data
     df_copy["Data"] = pd.to_datetime(df_copy["Data"], errors="coerce")
     today = date.today()
 
@@ -126,9 +125,15 @@ else:
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Fatturato anno corrente", f"€ {totale_anno:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        st.metric(
+            "Fatturato anno corrente",
+            f"€ {totale_anno:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        )
     with col2:
-        st.metric("Fatturato mese corrente", f"€ {totale_mese:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        st.metric(
+            "Fatturato mese corrente",
+            f"€ {totale_mese:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        )
     with col3:
         st.metric("Numero documenti emessi", int(len(df_copy)))
 
@@ -136,7 +141,16 @@ else:
     df_show = df_copy.sort_values("Data", ascending=False).head(10)
     st.dataframe(
         df_show[
-            ["Tipo", "Numero", "Data", "Controparte", "Imponibile", "IVA", "Importo", "Stato"]
+            [
+                "Tipo",
+                "Numero",
+                "Data",
+                "Controparte",
+                "Imponibile",
+                "IVA",
+                "Importo",
+                "Stato",
+            ]
         ],
         use_container_width=True,
     )
