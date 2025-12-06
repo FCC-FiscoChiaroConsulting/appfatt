@@ -151,7 +151,8 @@ def crea_riepilogo_fatture_emesse(df: pd.DataFrame) -> None:
         return
 
     df = df.copy()
-    df["Data"] = pd.to_datetime(df["Data"], errors="coerce")
+    # FORMATO EUROPEO: DD/MM/YYYY
+    df["Data"] = pd.to_datetime(df["Data"], format="%d/%m/%Y", errors="coerce")
     anni = sorted(df["Data"].dt.year.dropna().unique())
     if not anni:
         st.info("Nessuna data valida sulle fatture emesse.")
@@ -506,7 +507,8 @@ st.markdown("---")
 docs_per_month = {m: 0 for m in range(1, 13)}
 df_tmp = st.session_state.documenti_emessi.copy()
 if not df_tmp.empty:
-    df_tmp["Data"] = pd.to_datetime(df_tmp["Data"], errors="coerce")
+    # FORMATO EUROPEO
+    df_tmp["Data"] = pd.to_datetime(df_tmp["Data"], format="%d/%m/%Y", errors="coerce")
     for m in range(1, 13):
         docs_per_month[m] = (df_tmp["Data"].dt.month == m).sum()
 
@@ -633,8 +635,9 @@ elif pagina == "📋 Lista documenti":
                 if df_tutte.empty:
                     st.info("Nessun documento emesso.")
                 else:
-                    df_tutte["Data"] = pd.to_datetime(df_tutte["Data"], errors="coerce")
-                    df_tutte = df_tutte.sort_values("Data", ascending=False)
+                    # FORMATO EUROPEO
+                    df_tutte["DataSort"] = pd.to_datetime(df_tutte["Data"], format="%d/%m/%Y", errors="coerce")
+                    df_tutte = df_tutte.sort_values("DataSort", ascending=False)
                     
                     for row_index, row in df_tutte.iterrows():
                         numero = row.get("Numero", "")
@@ -752,7 +755,8 @@ elif pagina == "📋 Lista documenti":
                                         nuovo_num = get_next_invoice_number()
                                         nuova_riga = row.copy()
                                         nuova_riga["Numero"] = nuovo_num
-                                        nuova_riga["Data"] = str(date.today())
+                                        # FORMATO EUROPEO
+                                        nuova_riga["Data"] = date.today().strftime("%d/%m/%Y")
                                         st.session_state.documenti_emessi = pd.concat(
                                             [st.session_state.documenti_emessi, pd.DataFrame([nuova_riga])],
                                             ignore_index=True,
@@ -774,15 +778,16 @@ elif pagina == "📋 Lista documenti":
                 mese_idx = i
                 df_mese = st.session_state.documenti_emessi.copy()
                 if not df_mese.empty:
-                    df_mese["Data"] = pd.to_datetime(df_mese["Data"], errors="coerce")
-                    df_mese = df_mese[df_mese["Data"].dt.month == mese_idx]
+                    # FORMATO EUROPEO
+                    df_mese["DataSort"] = pd.to_datetime(df_mese["Data"], format="%d/%m/%Y", errors="coerce")
+                    df_mese = df_mese[df_mese["DataSort"].dt.month == mese_idx]
 
                 if df_mese.empty:
                     st.info("Nessun documento in questo periodo.")
                     continue
 
                 st.caption("Elenco fatture emesse")
-                df_mese = df_mese.sort_values("Data", ascending=False)
+                df_mese = df_mese.sort_values("DataSort", ascending=False)
                 
                 for row_index, row in df_mese.iterrows():
                     numero = row.get("Numero", "")
@@ -900,7 +905,8 @@ elif pagina == "📋 Lista documenti":
                                     nuovo_num = get_next_invoice_number()
                                     nuova_riga = row.copy()
                                     nuova_riga["Numero"] = nuovo_num
-                                    nuova_riga["Data"] = str(date.today())
+                                    # FORMATO EUROPEO
+                                    nuova_riga["Data"] = date.today().strftime("%d/%m/%Y")
                                     st.session_state.documenti_emessi = pd.concat(
                                         [st.session_state.documenti_emessi, pd.DataFrame([nuova_riga])],
                                         ignore_index=True,
@@ -928,7 +934,8 @@ elif pagina == "➕ Crea nuova fattura":
             st.session_state.righe_correnti = [{"desc": "SERVIZIO", "qta": 1.0, "prezzo": float(fattura_da_modificare["Imponibile"]), "iva": 22}]
         
         numero_originale = fattura_da_modificare["Numero"]
-        data_originale = pd.to_datetime(fattura_da_modificare["Data"]).date()
+        # FORMATO EUROPEO
+        data_originale = pd.to_datetime(fattura_da_modificare["Data"], format="%d/%m/%Y").date()
         controparte_originale = fattura_da_modificare["Controparte"]
         tipo_xml_originale = fattura_da_modificare["TipoXML"]
         stato_originale = fattura_da_modificare["Stato"]
@@ -1146,7 +1153,8 @@ elif pagina == "➕ Crea nuova fattura":
 
                 if st.session_state.modalita_modifica:
                     idx = st.session_state.fattura_in_modifica
-                    st.session_state.documenti_emessi.loc[idx, "Data"] = str(data_f)
+                    # FORMATO EUROPEO
+                    st.session_state.documenti_emessi.loc[idx, "Data"] = data_f.strftime("%d/%m/%Y")
                     st.session_state.documenti_emessi.loc[idx, "Controparte"] = cliente_corrente["Denominazione"]
                     st.session_state.documenti_emessi.loc[idx, "Imponibile"] = imponibile
                     st.session_state.documenti_emessi.loc[idx, "IVA"] = iva_tot
@@ -1164,7 +1172,8 @@ elif pagina == "➕ Crea nuova fattura":
                     nuova = pd.DataFrame([{
                         "Tipo": "Emessa",
                         "Numero": numero,
-                        "Data": str(data_f),
+                        # FORMATO EUROPEO
+                        "Data": data_f.strftime("%d/%m/%Y"),
                         "Controparte": cliente_corrente["Denominazione"],
                         "Imponibile": imponibile,
                         "IVA": iva_tot,
@@ -1296,7 +1305,10 @@ else:
     
     if not df_e.empty:
         st.markdown("### 📊 Ultime fatture emesse")
-        df_recenti = df_e.tail(5).sort_values("Data", ascending=False)
+        df_recenti = df_e.copy()
+        # FORMATO EUROPEO
+        df_recenti["DataSort"] = pd.to_datetime(df_recenti["Data"], format="%d/%m/%Y", errors="coerce")
+        df_recenti = df_recenti.sort_values("DataSort", ascending=False).head(5)
         st.dataframe(df_recenti[["Numero", "Data", "Controparte", "Importo"]], use_container_width=True, hide_index=True)
     
     st.markdown("---")
