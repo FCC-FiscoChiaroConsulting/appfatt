@@ -59,7 +59,7 @@ COLONNE_DOC = [
 ]
 
 # ==========================
-# INIZIALIZZAZIONE SESSION_STATE
+# STATO INIZIALE
 # ==========================
 if "documenti_emessi" not in st.session_state:
     st.session_state.documenti_emessi = pd.DataFrame(columns=COLONNE_DOC)
@@ -297,7 +297,8 @@ def genera_xml_fattura(dati: dict) -> str:
 
 
 def salva_su_file(pdf_buffer: BytesIO, xml_string: str, numero: str):
-    base_dir = os.path.join("Documenti", "Fatture")
+    # Salva in C:\Users\Public\Documents\Fatture
+    base_dir = r"C:\Users\Public\Documents\Fatture"
     os.makedirs(base_dir, exist_ok=True)
     pdf_path = os.path.join(base_dir, f"{numero}.pdf")
     xml_path = os.path.join(base_dir, f"{numero}.xml")
@@ -558,7 +559,7 @@ if submitted:
         st.session_state.clienti = df_cli
 
     pdf_buffer = genera_pdf_fattura(dati)
-    xml_string = gener_xml = genera_xml_fattura(dati)
+    xml_string = genera_xml_fattura(dati)
     pdf_path, xml_path = salva_su_file(pdf_buffer, xml_string, numero)
     registra_in_documenti(dati, pdf_path)
 
