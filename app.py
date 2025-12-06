@@ -460,6 +460,9 @@ if pagina_default not in PAGINE:
     pagina_default = "📊 Dashboard"
 default_index = PAGINE.index(pagina_default)
 
+# ==========================
+# SIDEBAR - PANNELLO DI CONTROLLO
+# ==========================
 with st.sidebar:
     st.markdown("## 🎛️ Pannello di controllo")
     st.markdown("**Fisco Chiaro Consulting**")
@@ -477,15 +480,10 @@ with st.sidebar:
     st.caption("Versione 1.0 | © 2025")
 
 # ==========================
-# HEADER
+# HEADER PRINCIPALE (SEMPLIFICATO)
 # ==========================
-col_logo, col_user = st.columns([5, 1])
-with col_logo:
-    st.markdown(f"<h1 style='color:{PRIMARY_BLUE};margin-bottom:0'>FISCO CHIARO CONSULTING</h1>", unsafe_allow_html=True)
-    st.markdown("**Gestione Fatture Elettroniche**")
-with col_user:
-    st.markdown("👤 **Operatore**")
-
+st.markdown(f"<h1 style='color:{PRIMARY_BLUE};margin-bottom:0;'>FISCO CHIARO CONSULTING</h1>", unsafe_allow_html=True)
+st.markdown("**Gestione Fatture Elettroniche**")
 st.markdown("---")
 
 # ==========================
@@ -639,7 +637,7 @@ if pagina == "📋 Lista documenti":
                                             st.markdown("Anteprima PDF:")
                                             mostra_anteprima_pdf(pdf_bytes, altezza=400)
                                         else:
-                                            st.warning("PDF non disponibile su disco.")
+                                            st.warning("PDF non disponibile")
 
                                     if pdf_bytes:
                                         st.download_button(
@@ -787,7 +785,7 @@ if pagina == "📋 Lista documenti":
                                         st.markdown("Anteprima PDF:")
                                         mostra_anteprima_pdf(pdf_bytes, altezza=400)
                                     else:
-                                        st.warning("PDF non disponibile su disco.")
+                                        st.warning("PDF non disponibile")
 
                                 if pdf_bytes:
                                     st.download_button(
