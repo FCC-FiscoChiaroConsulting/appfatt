@@ -87,6 +87,13 @@ if "cliente_corrente_label" not in st.session_state:
 if "pagina_corrente" not in st.session_state:
     st.session_state.pagina_corrente = "Dashboard"
 
+# NUOVI STATI PER LA MODIFICA
+if "fattura_in_modifica" not in st.session_state:
+    st.session_state.fattura_in_modifica = None
+
+if "modalita_modifica" not in st.session_state:
+    st.session_state.modalita_modifica = False
+
 
 # ==========================
 # FUNZIONI DI SUPPORTO
@@ -151,18 +158,8 @@ def crea_riepilogo_fatture_emesse(df: pd.DataFrame) -> None:
     df_anno = df[df["Data"].dt.year == anno_sel]
 
     mesi_label = [
-        "Gennaio",
-        "Febbraio",
-        "Marzo",
-        "Aprile",
-        "Maggio",
-        "Giugno",
-        "Luglio",
-        "Agosto",
-        "Settembre",
-        "Ottobre",
-        "Novembre",
-        "Dicembre",
+        "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+        "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
     ]
 
     rows = []
@@ -171,14 +168,12 @@ def crea_riepilogo_fatture_emesse(df: pd.DataFrame) -> None:
         imp_tot = df_m["Importo"].sum()
         imp_imp = df_m["Imponibile"].sum()
         iva_tot = df_m["IVA"].sum()
-        rows.append(
-            {
-                "Periodo": mesi_label[m - 1],
-                "Importo a pagare": _format_val_eur(imp_tot),
-                "Imponibile": _format_val_eur(imp_imp),
-                "IVA": _format_val_eur(iva_tot),
-            }
-        )
+        rows.append({
+            "Periodo": mesi_label[m - 1],
+            "Importo a pagare": _format_val_eur(imp_tot),
+            "Imponibile": _format_val_eur(imp_imp),
+            "IVA": _format_val_eur(iva_tot),
+        })
 
     trimestri = {
         "1° Trimestre": [1, 2, 3],
@@ -191,26 +186,22 @@ def crea_riepilogo_fatture_emesse(df: pd.DataFrame) -> None:
         imp_tot = df_q["Importo"].sum()
         imp_imp = df_q["Imponibile"].sum()
         iva_tot = df_q["IVA"].sum()
-        rows.append(
-            {
-                "Periodo": nome,
-                "Importo a pagare": _format_val_eur(imp_tot),
-                "Imponibile": _format_val_eur(imp_imp),
-                "IVA": _format_val_eur(iva_tot),
-            }
-        )
+        rows.append({
+            "Periodo": nome,
+            "Importo a pagare": _format_val_eur(imp_tot),
+            "Imponibile": _format_val_eur(imp_imp),
+            "IVA": _format_val_eur(iva_tot),
+        })
 
     imp_tot = df_anno["Importo"].sum()
     imp_imp = df_anno["Imponibile"].sum()
     iva_tot = df_anno["IVA"].sum()
-    rows.append(
-        {
-            "Periodo": "Annuale",
-            "Importo a pagare": _format_val_eur(imp_tot),
-            "Imponibile": _format_val_eur(imp_imp),
-            "IVA": _format_val_eur(iva_tot),
-        }
-    )
+    rows.append({
+        "Periodo": "Annuale",
+        "Importo a pagare": _format_val_eur(imp_tot),
+        "Imponibile": _format_val_eur(imp_imp),
+        "IVA": _format_val_eur(iva_tot),
+    })
 
     df_riep = pd.DataFrame(rows)
     st.markdown("### Prospetto riepilogativo fatture emesse")
@@ -232,33 +223,22 @@ def genera_pdf_fattura(
     modalita_pagamento: str = "",
     note: str = "",
 ) -> bytes:
-    """
-    PDF di cortesia con layout tipo Effatta.
-    """
+    """PDF di cortesia con layout tipo Effatta."""
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     row_height = 6
 
-    # -------------------------
     # INTESTAZIONE EMITTENTE
-    # -------------------------
     pdf.set_font("Helvetica", "B", 14)
     pdf.cell(0, 8, EMITTENTE["Denominazione"], ln=1)
     pdf.set_font("Helvetica", "", 9)
     pdf.cell(0, 5, EMITTENTE["Indirizzo"], ln=1)
-    pdf.cell(
-        0,
-        5,
-        f'{EMITTENTE["CAP"]} {EMITTENTE["Comune"]} ({EMITTENTE["Provincia"]}) IT',
-        ln=1,
-    )
+    pdf.cell(0, 5, f'{EMITTENTE["CAP"]} {EMITTENTE["Comune"]} ({EMITTENTE["Provincia"]}) IT', ln=1)
     pdf.cell(0, 5, f'CODICE FISCALE {EMITTENTE["CF"]}', ln=1)
     pdf.cell(0, 5, f'PARTITA IVA {EMITTENTE["PIVA"]}', ln=1)
 
-    # -------------------------
     # BLOCCO CLIENTE A DESTRA
-    # -------------------------
     current_y = pdf.get_y()
     pdf.set_xy(120, current_y)
     pdf.set_font("Helvetica", "B", 9)
@@ -274,12 +254,7 @@ def genera_pdf_fattura(
         pdf.cell(0, 5, indirizzo_cli, ln=1)
 
     pdf.set_x(120)
-    pdf.cell(
-        0,
-        5,
-        f"{cliente.get('CAP','')} {cliente.get('Comune','')} ({cliente.get('Provincia','')}) IT",
-        ln=1,
-    )
+    pdf.cell(0, 5, f"{cliente.get('CAP','')} {cliente.get('Comune','')} ({cliente.get('Provincia','')}) IT", ln=1)
 
     if cliente.get("PIVA"):
         pdf.set_x(120)
@@ -290,9 +265,7 @@ def genera_pdf_fattura(
 
     pdf.ln(6)
 
-    # -------------------------
     # DATI DOCUMENTO / TRASMISSIONE
-    # -------------------------
     left_x = 10
     right_x = 110
     col_width = 90
@@ -328,22 +301,16 @@ def genera_pdf_fattura(
 
     row_left("TIPO", tipo_label)
     row_right("CODICE DESTINATARIO", cliente.get("CodiceDestinatario", "0000000"))
-
     row_left("NUMERO", str(numero))
     row_right("PEC DESTINATARIO", cliente.get("PEC", ""))
-
     row_left("DATA", data_f.strftime("%d/%m/%Y"))
     row_right("DATA INVIO", "")
-
     causale = note.strip() if note else "SERVIZIO"
     row_left("CAUSALE", causale)
     row_right("IDENTIFICATIVO SDI", "")
-
     pdf.ln(2)
 
-    # -------------------------
     # DETTAGLIO DOCUMENTO
-    # -------------------------
     pdf.set_fill_color(31, 119, 180)
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 9)
@@ -385,36 +352,27 @@ def genera_pdf_fattura(
         pdf.cell(widths[8], row_height, "", border=1, align="C")
         pdf.ln(row_height)
 
-    # -------------------------
-    # IMPORTI A SINISTRA
-    # -------------------------
+    # IMPORTI
     pdf.ln(2)
     pdf.set_x(10)
     pdf.set_font("Helvetica", "", 8)
-
     pdf.cell(40, row_height, "IMPORTO", border=1)
     pdf.cell(50, row_height, _format_val_eur(imponibile), border=1, ln=1, align="R")
-
     pdf.set_x(10)
     pdf.cell(40, row_height, "TOTALE IMPONIBILE", border=1)
     pdf.cell(50, row_height, _format_val_eur(imponibile), border=1, ln=1, align="R")
-
     pdf.set_x(10)
     pdf.cell(40, row_height, "IVA (SU IMPONIBILE)", border=1)
     pdf.cell(50, row_height, _format_val_eur(iva), border=1, ln=1, align="R")
-
     pdf.set_x(10)
     pdf.cell(40, row_height, "IMPORTO TOTALE", border=1)
     pdf.cell(50, row_height, _format_val_eur(totale), border=1, ln=1, align="R")
-
     pdf.set_x(10)
     pdf.set_font("Helvetica", "B", 9)
     pdf.cell(40, row_height, "NETTO A PAGARE", border=1)
     pdf.cell(50, row_height, _format_val_eur(totale), border=1, ln=1, align="R")
 
-    # -------------------------
     # RIEPILOGHI IVA
-    # -------------------------
     pdf.ln(3)
     pdf.set_fill_color(31, 119, 180)
     pdf.set_text_color(255, 255, 255)
@@ -425,17 +383,7 @@ def genera_pdf_fattura(
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Helvetica", "B", 8)
 
-    riepi_headers = [
-        "IVA %",
-        "NAT.",
-        "RIFERIMENTO NORMATIVO",
-        "IMPONIBILE",
-        "IMPOSTA",
-        "ESIG. IVA",
-        "ARROT.",
-        "SPESE ACC.",
-        "TOTALE",
-    ]
+    riepi_headers = ["IVA %", "NAT.", "RIFERIMENTO NORMATIVO", "IMPONIBILE", "IMPOSTA", "ESIG. IVA", "ARROT.", "SPESE ACC.", "TOTALE"]
     riepi_w = [14, 14, 40, 24, 20, 20, 14, 24, 24]
 
     pdf.set_x(10)
@@ -456,21 +404,12 @@ def genera_pdf_fattura(
     pdf.cell(riepi_w[8], row_height, _format_val_eur(totale), border=1, align="R")
     pdf.ln(4)
 
-    # -------------------------
     # MODALITÀ DI PAGAMENTO
-    # -------------------------
     pdf.set_fill_color(31, 119, 180)
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 9)
     pdf.set_x(10)
-    pdf.cell(
-        190 - 20,
-        row_height,
-        "MODALITA' DI PAGAMENTO ACCETTATE: PAGAMENTO COMPLETO",
-        border=1,
-        ln=1,
-        fill=True,
-    )
+    pdf.cell(190 - 20, row_height, "MODALITA' DI PAGAMENTO ACCETTATE: PAGAMENTO COMPLETO", border=1, ln=1, fill=True)
 
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Helvetica", "B", 8)
@@ -500,13 +439,10 @@ def genera_pdf_fattura(
     pdf.set_y(-25)
     pdf.set_font("Helvetica", "I", 7)
     pdf.multi_cell(
-        0,
-        4,
-        (
-            "Copia di cortesia priva di valore ai fini fiscali e giuridici ai sensi dell'articolo 21 del D.P.R. 633/72. "
-            "L'originale del documento è consultabile presso l'indirizzo PEC o il codice SDI registrato "
-            "o nell'area riservata Fatture e Corrispettivi."
-        ),
+        0, 4,
+        ("Copia di cortesia priva di valore ai fini fiscali e giuridici ai sensi dell'articolo 21 del D.P.R. 633/72. "
+         "L'originale del documento è consultabile presso l'indirizzo PEC o il codice SDI registrato "
+         "o nell'area riservata Fatture e Corrispettivi."),
         align="C",
     )
 
@@ -535,12 +471,7 @@ default_index = PAGINE.index(pagina_default)
 
 with st.sidebar:
     st.markdown("### 📄 Documenti")
-    pagina = st.radio(
-        "",
-        PAGINE,
-        index=default_index,
-        label_visibility="collapsed",
-    )
+    pagina = st.radio("", PAGINE, index=default_index, label_visibility="collapsed")
     st.session_state.pagina_corrente = pagina
 
 # ==========================
@@ -548,10 +479,7 @@ with st.sidebar:
 # ==========================
 col_logo, col_menu, col_user = st.columns([2, 5, 1])
 with col_logo:
-    st.markdown(
-        f"<h1 style='color:{PRIMARY_BLUE};margin-bottom:0'>FISCO CHIARO CONSULTING</h1>",
-        unsafe_allow_html=True,
-    )
+    st.markdown(f"<h1 style='color:{PRIMARY_BLUE};margin-bottom:0'>FISCO CHIARO CONSULTING</h1>", unsafe_allow_html=True)
 with col_menu:
     st.markdown("Dashboard | Clienti | Documenti")
 with col_user:
@@ -576,16 +504,9 @@ if not df_tmp.empty:
 if pagina == "Lista documenti":
     st.subheader("Lista documenti")
 
-    # ==========================
-    # BARRA STATO / EMESSE / RICEVUTE
-    # ==========================
     col_search, col_stato, col_emesse, col_ricevute, col_agg = st.columns([4, 1, 1, 1, 1])
     with col_search:
-        barra_ricerca = st.text_input(
-            "",
-            placeholder="Id fiscale, denominazione, causale, tag",
-            label_visibility="collapsed",
-        )
+        barra_ricerca = st.text_input("", placeholder="Id fiscale, denominazione, causale, tag", label_visibility="collapsed")
     with col_stato:
         if st.button("STATO"):
             st.session_state.pagina_corrente = "Dashboard"
@@ -601,20 +522,8 @@ if pagina == "Lista documenti":
     with col_agg:
         st.button("AGGIORNA")
 
-    nomi_mesi = [
-        "Gennaio",
-        "Febbraio",
-        "Marzo",
-        "Aprile",
-        "Maggio",
-        "Giugno",
-        "Luglio",
-        "Agosto",
-        "Settembre",
-        "Ottobre",
-        "Novembre",
-        "Dicembre",
-    ]
+    nomi_mesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+                 "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
 
     mesi = ["Riepilogo"]
     for m, nome in enumerate(nomi_mesi, start=1):
@@ -633,7 +542,7 @@ if pagina == "Lista documenti":
     for i, tab in enumerate(tabs):
         with tab:
             if i == 0:
-                # Tab Riepilogo - Prospetto + Elenco completo
+                # Tab Riepilogo
                 crea_riepilogo_fatture_emesse(st.session_state.documenti_emessi)
                 
                 st.markdown("---")
@@ -652,8 +561,6 @@ if pagina == "Lista documenti":
                         numero = row.get("Numero", "")
                         data_doc = row.get("Data", "")
                         controparte = row.get("Controparte", "")
-                        imponibile_row = float(row.get("Imponibile", 0) or 0)
-                        iva_row = float(row.get("IVA", 0) or 0)
                         importo = float(row.get("Importo", 0) or 0)
                         tipo_xml = row.get("TipoXML", "TD01")
                         stato_doc = row.get("Stato", "Creazione")
@@ -667,11 +574,8 @@ if pagina == "Lista documenti":
                         }
                         tipo_label = tipo_map.get(tipo_xml, tipo_xml)
 
-                        # Cerca P.IVA/CF del cliente
                         piva_cf = ""
-                        cli_df = st.session_state.clienti[
-                            st.session_state.clienti["Denominazione"] == controparte
-                        ]
+                        cli_df = st.session_state.clienti[st.session_state.clienti["Denominazione"] == controparte]
                         if not cli_df.empty:
                             cli_row = cli_df.iloc[0]
                             piva_val = (cli_row.get("PIVA") or "").strip()
@@ -682,18 +586,14 @@ if pagina == "Lista documenti":
                                 piva_cf = cf_val
 
                         with st.container(border=True):
-                            col_icon, col_info, col_imp, col_stato, col_menu = st.columns(
-                                [0.6, 4, 1.6, 1.4, 1.8]
-                            )
+                            col_icon, col_info, col_imp, col_stato, col_menu = st.columns([0.6, 4, 1.6, 1.4, 1.8])
 
-                            # ICONA
                             with col_icon:
                                 if tipo_xml == "TD01" and piva_cf:
                                     st.markdown("🟥 **B2B**")
                                 else:
                                     st.markdown("📄")
 
-                            # INFO CENTRALI
                             with col_info:
                                 info_lines = []
                                 info_lines.append(f"**{tipo_label}**")
@@ -707,14 +607,12 @@ if pagina == "Lista documenti":
                                 info_lines.append("SERVIZIO")
                                 st.markdown("  \n".join(info_lines))
 
-                            # IMPORTO + ESIGIBILITÀ
                             with col_imp:
                                 st.markdown("**IMPORTO (EUR)**")
                                 st.markdown(_format_val_eur(importo))
                                 st.markdown("**ESIGIBILITÀ IVA**")
                                 st.markdown("IMMEDIATA")
 
-                            # STATO
                             with col_stato:
                                 st.markdown("**Stato**")
                                 possibili_stati = ["Creazione", "Creato", "Inviato"]
@@ -729,20 +627,17 @@ if pagina == "Lista documenti":
                                 )
                                 st.session_state.documenti_emessi.loc[row_index, "Stato"] = new_stato
 
-                            # MENU AZIONI CON POPOVER
                             with col_menu:
                                 st.markdown("**Azioni**")
 
                                 with st.popover("▼", use_container_width=True):
                                     st.markdown("**Seleziona azione**")
 
-                                    # Carico il PDF una sola volta (se esiste)
                                     pdf_bytes = None
                                     if pdf_path and os.path.exists(pdf_path):
                                         with open(pdf_path, "rb") as f:
                                             pdf_bytes = f.read()
 
-                                    # 👁 Visualizza
                                     if st.button("👁 Visualizza", key=f"vis_riep_{row_index}"):
                                         if pdf_bytes:
                                             st.markdown("Anteprima PDF:")
@@ -750,7 +645,6 @@ if pagina == "Lista documenti":
                                         else:
                                             st.warning("PDF non disponibile su disco.")
 
-                                    # 📄 Scarica PDF fattura (resta sempre visibile)
                                     if pdf_bytes:
                                         st.download_button(
                                             "📄 Scarica PDF fattura",
@@ -762,19 +656,19 @@ if pagina == "Lista documenti":
                                     else:
                                         st.warning("PDF non disponibile su disco.")
 
-                                    # 📦 Scarica pacchetto (placeholder)
                                     if st.button("📦 Scarica pacchetto", key=f"pac_riep_{row_index}"):
                                         st.info("Funzione 'Scarica pacchetto' non ancora implementata.")
 
-                                    # 📑 Scarica PDF proforma (placeholder)
                                     if st.button("📑 Scarica PDF proforma", key=f"prof_riep_{row_index}"):
                                         st.info("Funzione 'PDF proforma' non ancora implementata.")
 
-                                    # ✏️ Modifica (placeholder)
+                                    # ✏️ MODIFICA - IMPLEMENTATA
                                     if st.button("✏️ Modifica", key=f"mod_riep_{row_index}"):
-                                        st.info("Funzione modifica non ancora implementata in questa versione.")
+                                        st.session_state.fattura_in_modifica = row_index
+                                        st.session_state.modalita_modifica = True
+                                        st.session_state.pagina_corrente = "Crea nuova fattura"
+                                        st.rerun()
 
-                                    # 🧬 Duplica
                                     if st.button("🧬 Duplica", key=f"dup_riep_{row_index}"):
                                         nuovo_num = get_next_invoice_number()
                                         nuova_riga = row.copy()
@@ -787,23 +681,19 @@ if pagina == "Lista documenti":
                                         st.success(f"Fattura duplicata come {nuovo_num}.")
                                         st.rerun()
 
-                                    # 🗑 Elimina
                                     if st.button("🗑 Elimina", key=f"del_riep_{row_index}"):
                                         st.session_state.documenti_emessi = (
-                                            st.session_state.documenti_emessi
-                                            .drop(row_index)
-                                            .reset_index(drop=True)
+                                            st.session_state.documenti_emessi.drop(row_index).reset_index(drop=True)
                                         )
                                         st.warning("Fattura eliminata.")
                                         st.rerun()
 
-                                    # 📨 Invia (placeholder)
                                     if st.button("📨 Invia", key=f"inv_riep_{row_index}"):
                                         st.info("Funzione invio a SdI non ancora implementata.")
             
             else:
-                # Tab mensili
-                mese_idx = i  # 1–12
+                # Tab mensili (stesso codice con Modifica implementata)
+                mese_idx = i
                 df_mese = st.session_state.documenti_emessi.copy()
                 if not df_mese.empty:
                     df_mese["Data"] = pd.to_datetime(df_mese["Data"], errors="coerce")
@@ -814,15 +704,13 @@ if pagina == "Lista documenti":
                     continue
 
                 st.caption("Elenco fatture emesse (vista tipo Effatta)")
-
                 df_mese = df_mese.sort_values("Data", ascending=False)
+                
                 for row_index, row in df_mese.iterrows():
                     tipo = row.get("Tipo", "")
                     numero = row.get("Numero", "")
                     data_doc = row.get("Data", "")
                     controparte = row.get("Controparte", "")
-                    imponibile_row = float(row.get("Imponibile", 0) or 0)
-                    iva_row = float(row.get("IVA", 0) or 0)
                     importo = float(row.get("Importo", 0) or 0)
                     tipo_xml = row.get("TipoXML", "TD01")
                     stato_doc = row.get("Stato", "Creazione")
@@ -836,11 +724,8 @@ if pagina == "Lista documenti":
                     }
                     tipo_label = tipo_map.get(tipo_xml, tipo_xml)
 
-                    # Cerca P.IVA/CF del cliente
                     piva_cf = ""
-                    cli_df = st.session_state.clienti[
-                        st.session_state.clienti["Denominazione"] == controparte
-                    ]
+                    cli_df = st.session_state.clienti[st.session_state.clienti["Denominazione"] == controparte]
                     if not cli_df.empty:
                         cli_row = cli_df.iloc[0]
                         piva_val = (cli_row.get("PIVA") or "").strip()
@@ -852,18 +737,14 @@ if pagina == "Lista documenti":
 
                     with st.container(border=True):
                         st.markdown("---")
-                        col_icon, col_info, col_imp, col_stato, col_menu = st.columns(
-                            [0.6, 4, 1.6, 1.4, 1.8]
-                        )
+                        col_icon, col_info, col_imp, col_stato, col_menu = st.columns([0.6, 4, 1.6, 1.4, 1.8])
 
-                        # ICONA
                         with col_icon:
                             if tipo_xml == "TD01" and piva_cf:
                                 st.markdown("🟥 **B2B**")
                             else:
                                 st.markdown("📄")
 
-                        # INFO CENTRALI
                         with col_info:
                             info_lines = []
                             info_lines.append(f"**{tipo_label}**")
@@ -877,14 +758,12 @@ if pagina == "Lista documenti":
                             info_lines.append("SERVIZIO")
                             st.markdown("  \n".join(info_lines))
 
-                        # IMPORTO + ESIGIBILITÀ
                         with col_imp:
                             st.markdown("**IMPORTO (EUR)**")
                             st.markdown(_format_val_eur(importo))
                             st.markdown("**ESIGIBILITÀ IVA**")
                             st.markdown("IMMEDIATA")
 
-                        # STATO
                         with col_stato:
                             st.markdown("**Stato**")
                             possibili_stati = ["Creazione", "Creato", "Inviato"]
@@ -899,20 +778,17 @@ if pagina == "Lista documenti":
                             )
                             st.session_state.documenti_emessi.loc[row_index, "Stato"] = new_stato
 
-                        # MENU AZIONI CON POPOVER
                         with col_menu:
                             st.markdown("**Azioni**")
 
                             with st.popover("▼", use_container_width=True):
                                 st.markdown("**Seleziona azione**")
 
-                                # Carico il PDF una sola volta (se esiste)
                                 pdf_bytes = None
                                 if pdf_path and os.path.exists(pdf_path):
                                     with open(pdf_path, "rb") as f:
                                         pdf_bytes = f.read()
 
-                                # 👁 Visualizza
                                 if st.button("👁 Visualizza", key=f"vis_{row_index}"):
                                     if pdf_bytes:
                                         st.markdown("Anteprima PDF:")
@@ -920,7 +796,6 @@ if pagina == "Lista documenti":
                                     else:
                                         st.warning("PDF non disponibile su disco.")
 
-                                # 📄 Scarica PDF fattura (resta sempre visibile)
                                 if pdf_bytes:
                                     st.download_button(
                                         "📄 Scarica PDF fattura",
@@ -932,19 +807,19 @@ if pagina == "Lista documenti":
                                 else:
                                     st.warning("PDF non disponibile su disco.")
 
-                                # 📦 Scarica pacchetto (placeholder)
                                 if st.button("📦 Scarica pacchetto", key=f"pac_{row_index}"):
                                     st.info("Funzione 'Scarica pacchetto' non ancora implementata.")
 
-                                # 📑 Scarica PDF proforma (placeholder)
                                 if st.button("📑 Scarica PDF proforma", key=f"prof_{row_index}"):
                                     st.info("Funzione 'PDF proforma' non ancora implementata.")
 
-                                # ✏️ Modifica (placeholder)
+                                # ✏️ MODIFICA - IMPLEMENTATA
                                 if st.button("✏️ Modifica", key=f"mod_{row_index}"):
-                                    st.info("Funzione modifica non ancora implementata in questa versione.")
+                                    st.session_state.fattura_in_modifica = row_index
+                                    st.session_state.modalita_modifica = True
+                                    st.session_state.pagina_corrente = "Crea nuova fattura"
+                                    st.rerun()
 
-                                # 🧬 Duplica
                                 if st.button("🧬 Duplica", key=f"dup_{row_index}"):
                                     nuovo_num = get_next_invoice_number()
                                     nuova_riga = row.copy()
@@ -957,17 +832,13 @@ if pagina == "Lista documenti":
                                     st.success(f"Fattura duplicata come {nuovo_num}.")
                                     st.rerun()
 
-                                # 🗑 Elimina
                                 if st.button("🗑 Elimina", key=f"del_{row_index}"):
                                     st.session_state.documenti_emessi = (
-                                        st.session_state.documenti_emessi
-                                        .drop(row_index)
-                                        .reset_index(drop=True)
+                                        st.session_state.documenti_emessi.drop(row_index).reset_index(drop=True)
                                     )
                                     st.warning("Fattura eliminata.")
                                     st.rerun()
 
-                                # 📨 Invia (placeholder)
                                 if st.button("📨 Invia", key=f"inv_{row_index}"):
                                     st.info("Funzione invio a SdI non ancora implementata.")
 
@@ -1000,13 +871,36 @@ if pagina == "Lista documenti":
                     st.warning("Il file PDF indicato non esiste più sul disco.")
 
 elif pagina == "Crea nuova fattura":
-    st.subheader("Crea nuova fattura emessa")
+    # GESTIONE MODIFICA
+    if st.session_state.modalita_modifica and st.session_state.fattura_in_modifica is not None:
+        st.subheader("✏️ Modifica fattura esistente")
+        
+        # Carica i dati della fattura da modificare
+        fattura_da_modificare = st.session_state.documenti_emessi.loc[st.session_state.fattura_in_modifica]
+        
+        # Ricostruisci le righe (placeholder - dovrai salvare le righe originali)
+        # Per ora usiamo una riga vuota, ma dovresti salvare le righe originali
+        if not st.session_state.righe_correnti:
+            st.session_state.righe_correnti = [{"desc": "SERVIZIO", "qta": 1.0, "prezzo": float(fattura_da_modificare["Imponibile"]), "iva": 22}]
+        
+        numero_originale = fattura_da_modificare["Numero"]
+        data_originale = pd.to_datetime(fattura_da_modificare["Data"]).date()
+        controparte_originale = fattura_da_modificare["Controparte"]
+        tipo_xml_originale = fattura_da_modificare["TipoXML"]
+        stato_originale = fattura_da_modificare["Stato"]
+    else:
+        st.subheader("Crea nuova fattura emessa")
+        numero_originale = None
 
     denominazioni = ["NUOVO"] + st.session_state.clienti["Denominazione"].tolist()
 
     col1, col2 = st.columns([2, 1])
     with col1:
-        current_label = st.session_state.cliente_corrente_label
+        if st.session_state.modalita_modifica:
+            current_label = controparte_originale
+        else:
+            current_label = st.session_state.cliente_corrente_label
+            
         if current_label not in denominazioni:
             current_label = "NUOVO"
         default_idx = denominazioni.index(current_label)
@@ -1049,31 +943,23 @@ elif pagina == "Crea nuova fattura":
             "PEC": cli_pec,
         }
     else:
-        riga_cli = st.session_state.clienti[
-            st.session_state.clienti["Denominazione"] == cliente_sel
-        ].iloc[0]
+        riga_cli = st.session_state.clienti[st.session_state.clienti["Denominazione"] == cliente_sel].iloc[0]
 
         cli_den = st.text_input("Denominazione", riga_cli.get("Denominazione", ""))
         cli_piva = st.text_input("P.IVA", riga_cli.get("PIVA", ""))
         cli_cf = st.text_input("Codice Fiscale", riga_cli.get("CF", ""))
-        cli_ind = st.text_input(
-            "Indirizzo (via/piazza, civico)", riga_cli.get("Indirizzo", "")
-        )
+        cli_ind = st.text_input("Indirizzo (via/piazza, civico)", riga_cli.get("Indirizzo", ""))
         col_c1, col_c2, col_c3 = st.columns(3)
         with col_c1:
             cli_cap = st.text_input("CAP", riga_cli.get("CAP", ""))
         with col_c2:
             cli_com = st.text_input("Comune", riga_cli.get("Comune", ""))
         with col_c3:
-            cli_prov = st.text_input(
-                "Provincia (es. BA)", riga_cli.get("Provincia", "")
-            )
+            cli_prov = st.text_input("Provincia (es. BA)", riga_cli.get("Provincia", ""))
 
         col_x1, col_x2 = st.columns(2)
         with col_x1:
-            cli_coddest = st.text_input(
-                "Codice Destinatario", riga_cli.get("CodiceDestinatario", "0000000")
-            )
+            cli_coddest = st.text_input("Codice Destinatario", riga_cli.get("CodiceDestinatario", "0000000"))
         with col_x2:
             cli_pec = st.text_input("PEC destinatario", riga_cli.get("PEC", ""))
 
@@ -1095,27 +981,33 @@ elif pagina == "Crea nuova fattura":
         "TD04 - Nota di credito",
         "TD05 - Nota di debito",
     ]
-    tipo_xml_label = st.selectbox("Tipo documento XML", tipi_xml_label, index=0)
+    
+    if st.session_state.modalita_modifica:
+        tipo_idx = [t.startswith(tipo_xml_originale) for t in tipi_xml_label].index(True)
+    else:
+        tipo_idx = 0
+        
+    tipo_xml_label = st.selectbox("Tipo documento XML", tipi_xml_label, index=tipo_idx)
     tipo_xml_codice = tipo_xml_label.split(" ")[0]
 
     col_n1, col_n2 = st.columns(2)
     with col_n1:
-        numero = st.text_input("Numero fattura", get_next_invoice_number())
+        if st.session_state.modalita_modifica:
+            numero = st.text_input("Numero fattura", numero_originale, disabled=True)
+        else:
+            numero = st.text_input("Numero fattura", get_next_invoice_number())
     with col_n2:
-        data_f = st.date_input("Data fattura", date.today())
+        if st.session_state.modalita_modifica:
+            data_f = st.date_input("Data fattura", data_originale)
+        else:
+            data_f = st.date_input("Data fattura", date.today())
 
-    modalita_pagamento = st.text_input(
-        "Modalità di pagamento (es. Bonifico bancario su IBAN ...)", value=""
-    )
-    note = st.text_area(
-        "Note (causale verrà riportata in PDF come CAUSALE)", value="", height=80
-    )
+    modalita_pagamento = st.text_input("Modalità di pagamento (es. Bonifico bancario su IBAN ...)", value="")
+    note = st.text_area("Note (causale verrà riportata in PDF come CAUSALE)", value="", height=80)
 
     st.markdown("**Righe fattura**")
     if st.button("➕ Aggiungi riga"):
-        st.session_state.righe_correnti.append(
-            {"desc": "", "qta": 1.0, "prezzo": 0.0, "iva": 22}
-        )
+        st.session_state.righe_correnti.append({"desc": "", "qta": 1.0, "prezzo": 0.0, "iva": 22})
         st.rerun()
 
     imponibile = 0.0
@@ -1130,12 +1022,7 @@ elif pagina == "Crea nuova fattura":
         with c3:
             r["prezzo"] = st.number_input("Prezzo", min_value=0.0, value=r["prezzo"], key=f"prz{i}")
         with c4:
-            r["iva"] = st.selectbox(
-                "IVA %",
-                [22, 10, 5, 4, 0],
-                index=[22, 10, 5, 4, 0].index(r["iva"]),
-                key=f"iva{i}",
-            )
+            r["iva"] = st.selectbox("IVA %", [22, 10, 5, 4, 0], index=[22, 10, 5, 4, 0].index(r["iva"]), key=f"iva{i}")
         with c5:
             if st.button("🗑", key=f"del{i}"):
                 st.session_state.righe_correnti.pop(i)
@@ -1153,70 +1040,80 @@ elif pagina == "Crea nuova fattura":
     col_t2.metric("IVA", f"EUR {_format_val_eur(iva_tot)}")
     col_t3.metric("Totale", f"EUR {_format_val_eur(totale)}")
 
-    stato = st.selectbox("Stato", ["Creazione", "Creato", "Inviato"])
+    if st.session_state.modalita_modifica:
+        stato = st.selectbox("Stato", ["Creazione", "Creato", "Inviato"], 
+                           index=["Creazione", "Creato", "Inviato"].index(stato_originale))
+    else:
+        stato = st.selectbox("Stato", ["Creazione", "Creato", "Inviato"])
 
-    if st.button("💾 Salva fattura emessa", type="primary"):
-        if not cliente_corrente["Denominazione"]:
-            st.error("Inserisci almeno la denominazione del cliente.")
-        elif not st.session_state.righe_correnti:
-            st.error("Inserisci almeno una riga di fattura.")
+    col_btn1, col_btn2 = st.columns(2)
+    
+    with col_btn1:
+        if st.session_state.modalita_modifica:
+            btn_label = "💾 Salva modifiche"
         else:
-            # Salva cliente se nuovo
-            if (
-                cliente_corrente["Denominazione"]
-                and cliente_corrente["Denominazione"]
-                not in st.session_state.clienti["Denominazione"].tolist()
-            ):
-                nuovo_cli = pd.DataFrame(
-                    [
-                        {
-                            "Denominazione": cliente_corrente["Denominazione"],
-                            "PIVA": cliente_corrente["PIVA"],
-                            "CF": cliente_corrente["CF"],
-                            "Indirizzo": cliente_corrente["Indirizzo"],
-                            "CAP": cliente_corrente["CAP"],
-                            "Comune": cliente_corrente["Comune"],
-                            "Provincia": cliente_corrente["Provincia"],
-                            "CodiceDestinatario": cliente_corrente[
-                                "CodiceDestinatario"
-                            ],
-                            "PEC": cliente_corrente["PEC"],
-                            "Tipo": "Cliente",
-                        }
-                    ]
-                )
-                st.session_state.clienti = pd.concat(
-                    [st.session_state.clienti, nuovo_cli], ignore_index=True
-                )
+            btn_label = "💾 Salva fattura emessa"
+            
+        if st.button(btn_label, type="primary"):
+            if not cliente_corrente["Denominazione"]:
+                st.error("Inserisci almeno la denominazione del cliente.")
+            elif not st.session_state.righe_correnti:
+                st.error("Inserisci almeno una riga di fattura.")
             else:
-                # Aggiorna cliente esistente
-                mask = st.session_state.clienti["Denominazione"] == cliente_corrente["Denominazione"]
-                for campo in ["PIVA", "CF", "Indirizzo", "CAP", "Comune", "Provincia", "CodiceDestinatario", "PEC"]:
-                    st.session_state.clienti.loc[mask, campo] = cliente_corrente[campo]
+                # Salva/aggiorna cliente
+                if (cliente_corrente["Denominazione"] and 
+                    cliente_corrente["Denominazione"] not in st.session_state.clienti["Denominazione"].tolist()):
+                    nuovo_cli = pd.DataFrame([{
+                        "Denominazione": cliente_corrente["Denominazione"],
+                        "PIVA": cliente_corrente["PIVA"],
+                        "CF": cliente_corrente["CF"],
+                        "Indirizzo": cliente_corrente["Indirizzo"],
+                        "CAP": cliente_corrente["CAP"],
+                        "Comune": cliente_corrente["Comune"],
+                        "Provincia": cliente_corrente["Provincia"],
+                        "CodiceDestinatario": cliente_corrente["CodiceDestinatario"],
+                        "PEC": cliente_corrente["PEC"],
+                        "Tipo": "Cliente",
+                    }])
+                    st.session_state.clienti = pd.concat([st.session_state.clienti, nuovo_cli], ignore_index=True)
+                else:
+                    mask = st.session_state.clienti["Denominazione"] == cliente_corrente["Denominazione"]
+                    for campo in ["PIVA", "CF", "Indirizzo", "CAP", "Comune", "Provincia", "CodiceDestinatario", "PEC"]:
+                        st.session_state.clienti.loc[mask, campo] = cliente_corrente[campo]
 
-            # Genera PDF
-            pdf_bytes = genera_pdf_fattura(
-                numero,
-                data_f,
-                cliente_corrente,
-                st.session_state.righe_correnti,
-                imponibile,
-                iva_tot,
-                totale,
-                tipo_xml_codice=tipo_xml_codice,
-                modalita_pagamento=modalita_pagamento,
-                note=note,
-            )
+                # Genera PDF
+                pdf_bytes = genera_pdf_fattura(
+                    numero, data_f, cliente_corrente, st.session_state.righe_correnti,
+                    imponibile, iva_tot, totale, tipo_xml_codice=tipo_xml_codice,
+                    modalita_pagamento=modalita_pagamento, note=note,
+                )
 
-            pdf_filename = f"{numero.replace('/', '-')}.pdf"
-            pdf_path = os.path.join(PDF_DIR, pdf_filename)
-            with open(pdf_path, "wb") as f:
-                f.write(pdf_bytes)
+                pdf_filename = f"{numero.replace('/', '-')}.pdf"
+                pdf_path = os.path.join(PDF_DIR, pdf_filename)
+                with open(pdf_path, "wb") as f:
+                    f.write(pdf_bytes)
 
-            # Salva fattura
-            nuova = pd.DataFrame(
-                [
-                    {
+                if st.session_state.modalita_modifica:
+                    # Aggiorna fattura esistente
+                    idx = st.session_state.fattura_in_modifica
+                    st.session_state.documenti_emessi.loc[idx, "Data"] = str(data_f)
+                    st.session_state.documenti_emessi.loc[idx, "Controparte"] = cliente_corrente["Denominazione"]
+                    st.session_state.documenti_emessi.loc[idx, "Imponibile"] = imponibile
+                    st.session_state.documenti_emessi.loc[idx, "IVA"] = iva_tot
+                    st.session_state.documenti_emessi.loc[idx, "Importo"] = totale
+                    st.session_state.documenti_emessi.loc[idx, "TipoXML"] = tipo_xml_codice
+                    st.session_state.documenti_emessi.loc[idx, "Stato"] = stato
+                    st.session_state.documenti_emessi.loc[idx, "PDF"] = pdf_path
+                    
+                    st.success("✅ Fattura modificata con successo!")
+                    
+                    # Reset modalità modifica
+                    st.session_state.modalita_modifica = False
+                    st.session_state.fattura_in_modifica = None
+                    st.session_state.righe_correnti = []
+                else:
+                    # Crea nuova fattura
+                    nuova = pd.DataFrame([{
                         "Tipo": "Emessa",
                         "Numero": numero,
                         "Data": str(data_f),
@@ -1228,24 +1125,30 @@ elif pagina == "Crea nuova fattura":
                         "Stato": stato,
                         "UUID": "",
                         "PDF": pdf_path,
-                    }
-                ],
-                columns=COLONNE_DOC,
-            )
-            st.session_state.documenti_emessi = pd.concat(
-                [st.session_state.documenti_emessi, nuova], ignore_index=True
-            )
-            st.session_state.righe_correnti = []
+                    }], columns=COLONNE_DOC)
+                    st.session_state.documenti_emessi = pd.concat(
+                        [st.session_state.documenti_emessi, nuova], ignore_index=True
+                    )
+                    st.session_state.righe_correnti = []
+                    st.success("✅ Fattura emessa salvata e PDF generato.")
 
-            st.success("✅ Fattura emessa salvata e PDF generato.")
-            st.download_button(
-                label="📥 Scarica subito il PDF",
-                data=pdf_bytes,
-                file_name=pdf_filename,
-                mime="application/pdf",
-            )
-            st.markdown("**Anteprima PDF generato**")
-            mostra_anteprima_pdf(pdf_bytes, altezza=600)
+                st.download_button(
+                    label="📥 Scarica subito il PDF",
+                    data=pdf_bytes,
+                    file_name=pdf_filename,
+                    mime="application/pdf",
+                )
+                st.markdown("**Anteprima PDF generato**")
+                mostra_anteprima_pdf(pdf_bytes, altezza=600)
+    
+    with col_btn2:
+        if st.session_state.modalita_modifica:
+            if st.button("❌ Annulla modifica"):
+                st.session_state.modalita_modifica = False
+                st.session_state.fattura_in_modifica = None
+                st.session_state.righe_correnti = []
+                st.session_state.pagina_corrente = "Lista documenti"
+                st.rerun()
 
 elif pagina == "Download (documenti inviati)":
     st.subheader("Download documenti inviati")
@@ -1253,9 +1156,7 @@ elif pagina == "Download (documenti inviati)":
 
 elif pagina == "Carica pacchetto AdE":
     st.subheader("Carica pacchetto AdE (ZIP da cassetto fiscale)")
-    uploaded_zip = st.file_uploader(
-        "Carica file ZIP (fatture + metadati)", type=["zip"]
-    )
+    uploaded_zip = st.file_uploader("Carica file ZIP (fatture + metadati)", type=["zip"])
     if uploaded_zip:
         st.write("Nome file caricato:", uploaded_zip.name)
         st.info("Parsing del pacchetto non ancora implementato in questa versione.")
@@ -1313,25 +1214,19 @@ elif pagina == "Rubrica":
         tipo = st.selectbox("Tipo", ["Cliente", "Fornitore"])
 
         if st.form_submit_button("💾 Salva contatto"):
-            nuovo = pd.DataFrame(
-                [
-                    {
-                        "Denominazione": den,
-                        "PIVA": piva,
-                        "CF": cf,
-                        "Indirizzo": ind,
-                        "CAP": cap,
-                        "Comune": com,
-                        "Provincia": prov,
-                        "CodiceDestinatario": cod_dest,
-                        "PEC": pec,
-                        "Tipo": tipo,
-                    }
-                ]
-            )
-            st.session_state.clienti = pd.concat(
-                [st.session_state.clienti, nuovo], ignore_index=True
-            )
+            nuovo = pd.DataFrame([{
+                "Denominazione": den,
+                "PIVA": piva,
+                "CF": cf,
+                "Indirizzo": ind,
+                "CAP": cap,
+                "Comune": com,
+                "Provincia": prov,
+                "CodiceDestinatario": cod_dest,
+                "PEC": pec,
+                "Tipo": tipo,
+            }])
+            st.session_state.clienti = pd.concat([st.session_state.clienti, nuovo], ignore_index=True)
             st.success("✅ Contatto salvato!")
 
 else:
@@ -1347,6 +1242,7 @@ else:
     col2.metric("Totale emesso", f"EUR {_format_val_eur(tot_emesse)}")
 
     st.markdown("---")
-    st.caption(
-        "Fisco Chiaro Consulting – Emesse gestite dall'app, PDF generati automaticamente."
-    )
+    st.caption("Fisco Chiaro Consulting – Emesse gestite dall'app, PDF generati automaticamente.")
+
+
+       
