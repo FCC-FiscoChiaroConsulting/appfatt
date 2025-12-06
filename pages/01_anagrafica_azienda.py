@@ -8,11 +8,11 @@ PRIMARY_BLUE = "#1f77b4"
 # ==========================
 if "anagrafica" not in st.session_state:
     st.session_state.anagrafica = {
-        # DATI FISCALI BASE
         "Ragione Sociale": "",
         "Forma Giuridica": "PERSONA GIURIDICA",
         "P.IVA": "",
         "CF": "",
+        "Regime Fiscale": "RF01 – Ordinario",
         "Indirizzo": "",
         "CAP": "",
         "Comune": "",
@@ -22,6 +22,18 @@ if "anagrafica" not in st.session_state:
     }
 
 ana = st.session_state.anagrafica
+
+REGIMI_FISCALI = [
+    "RF01 – Ordinario",
+    "RF02 – Contribuenti minimi",
+    "RF04 – Agricoltura e attività connesse",
+    "RF05 – Vendita sali e tabacchi",
+    "RF06 – Commercio fiammiferi",
+    "RF12 – Regime speciale agenzie viaggi",
+    "RF13 – Agriturismo",
+    "RF18 – Altro",
+    "RF19 – Forfetario",
+]
 
 # ==========================
 # HEADER
@@ -55,11 +67,18 @@ with st.form("form_anagrafica"):
         ana["Forma Giuridica"] = st.selectbox(
             "Forma Giuridica",
             ["PERSONA GIURIDICA", "PERSONA FISICA", "ALTRO"],
-            index=0 if ana.get("Forma Giuridica", "PERSONA GIURIDICA") == "PERSONA GIURIDICA" else 1,
+            index=["PERSONA GIURIDICA", "PERSONA FISICA", "ALTRO"].index(
+                ana.get("Forma Giuridica", "PERSONA GIURIDICA")
+            ),
         )
-        ana["PEC"] = st.text_input("PEC", value=ana["PEC"])
-        ana["Codice Destinatario"] = st.text_input(
-            "Codice Destinatario", value=ana["Codice Destinatario"]
+        # menu a tendina regimi fiscali
+        default_regime = ana.get("Regime Fiscale", "RF01 – Ordinario")
+        if default_regime not in REGIMI_FISCALI:
+            default_regime = "RF01 – Ordinario"
+        ana["Regime Fiscale"] = st.selectbox(
+            "Regime fiscale (codice RF)",
+            REGIMI_FISCALI,
+            index=REGIMI_FISCALI.index(default_regime),
         )
 
     st.markdown("---")
@@ -71,6 +90,15 @@ with st.form("form_anagrafica"):
     with col4:
         ana["Comune"] = st.text_input("Comune", value=ana["Comune"])
         ana["Provincia"] = st.text_input("Provincia (sigla)", value=ana["Provincia"])
+
+    st.markdown("---")
+    col5, col6 = st.columns(2)
+    with col5:
+        ana["PEC"] = st.text_input("PEC", value=ana["PEC"])
+    with col6:
+        ana["Codice Destinatario"] = st.text_input(
+            "Codice Destinatario", value=ana["Codice Destinatario"]
+        )
 
     salvato = st.form_submit_button("💾 Salva anagrafica", use_container_width=True)
 
@@ -85,10 +113,11 @@ with col_r1:
     st.write(f"**Ragione Sociale**: {ana['Ragione Sociale']}")
     st.write(f"**Forma Giuridica**: {ana['Forma Giuridica']}")
     st.write(f"**P.IVA / CF**: {ana['P.IVA']} / {ana['CF']}")
+    st.write(f"**Regime Fiscale**: {ana['Regime Fiscale']}")
 with col_r2:
     st.write(
         f"**Sede**: {ana['Indirizzo']} - {ana['CAP']} {ana['Comune']} ({ana['Provincia']})"
     )
     st.write(f"**PEC / SDI**: {ana['PEC']} / {ana['Codice Destinatario']}")
 
-st.caption("I dati vengono riutilizzati automaticamente per la compilazione delle fatture.")
+st.caption("I dati fiscali e il regime RF verranno riutilizzati nelle fatture PDF/XML.")
