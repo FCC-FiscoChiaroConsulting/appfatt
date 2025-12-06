@@ -297,4 +297,4 @@ def genera_pdf_fattura(
 
     def row_right(label: str, value: str, last: bool = True):
         pdf.set_x(right_x)
-        pdf.cell(col_width *
+        pdf.cell(col_width * 0.25, row_height, label, border=1)
