@@ -8,6 +8,7 @@ import os
 import uuid
 import base64
 import pandas as pd
+import re
 
 st.set_page_config(page_title="Nuova Fattura", page_icon="💰", layout="wide")
 PRIMARY_BLUE = "#1f77b4"
@@ -29,7 +30,6 @@ def get_dati_azienda_da_sessione():
             "pec": "",
             "codice_dest": "0000000",
         }
-
     return {
         "nome": ana.get("Ragione Sociale", "") or "GLOBAL BUSINESS SRL",
         "indirizzo": ana.get("Indirizzo", "") or "VIA CARULLI 90",
@@ -110,7 +110,6 @@ def get_next_invoice_number() -> str:
     if not df.empty:
         mask = df["Numero"].astype(str).str.startswith(prefix)
         if mask.any():
-            import re
             existing = df.loc[mask, "Numero"].astype(str)
             max_seq = 0
             for num in existing:
@@ -165,7 +164,7 @@ def genera_pdf_fattura(dati: dict) -> BytesIO:
     else:
         c.drawRightString(x_right, y - 56, f"CODICE FISCALE {dati['cliente_cf']}")
 
-    # BARRA DATI DOCUMENTO / TRASMISSIONE
+    # DATI DOCUMENTO / TRASMISSIONE
     y = PAGE_H - 140
     mid_x = x_left + (x_right - x_left) / 2
     c.setFillColor(blu)
@@ -195,7 +194,7 @@ def genera_pdf_fattura(dati: dict) -> BytesIO:
     c.drawString(x_rt, y - row_h, "PEC DESTINATARIO")
     c.drawString(x_rt + 120, y - row_h, dati["pec_destinatario"])
 
-    # DETTAGLIO DOCUMENTO
+    # DETTAGLIO
     y = y - 3 * row_h - 30
     c.setFillColor(blu)
     c.rect(x_left, y, (x_right - x_left), 18, fill=1, stroke=0)
@@ -226,7 +225,7 @@ def genera_pdf_fattura(dati: dict) -> BytesIO:
     c.drawRightString(col_x["TOTALE"] + 60, y, dati["imponibile"])
     c.drawRightString(col_x["IVA %"] + 40, y, dati["iva_percentuale"])
 
-    # RIEPILOGO IMPORTI
+    # IMPORTI
     y -= 40
     c.setFont("Helvetica-Bold", 9)
     c.drawString(x_left + 4, y, f"IMPORTO = {dati['imponibile']}")
@@ -246,7 +245,7 @@ def genera_pdf_fattura(dati: dict) -> BytesIO:
     c.drawString(x_left + 4, y, f"NETTO A PAGARE = {dati['totale']}")
     c.setFillColor(colors.black)
 
-    # MODALITÀ PAGAMENTO (semplificata)
+    # PAGAMENTO
     y -= 40
     c.setFillColor(blu)
     c.rect(x_left, y, (x_right - x_left), 18, fill=1, stroke=0)
@@ -284,7 +283,6 @@ def genera_pdf_fattura(dati: dict) -> BytesIO:
 
 
 def genera_xml_fattura(dati: dict) -> str:
-    # XML molto semplificato, sufficiente come bozza
     xml = f"""<FatturaElettronica>
   <DatiGenerali>
     <TipoDocumento>TD01</TipoDocumento>
@@ -329,6 +327,7 @@ def registra_in_documenti(dati: dict, pdf_path: str):
         ignore_index=True,
     )
 
+
 def mostra_pdf(buffer: BytesIO, altezza: int = 600):
     pdf_bytes = buffer.getvalue()
     b64 = base64.b64encode(pdf_bytes).decode()
@@ -361,18 +360,63 @@ data_default = date.today()
 # FORM FATTURA
 # ==========================
 with st.form("form_fattura"):
+
+    # RUBRICA CLIENTI + NUOVO
+    st.subheader("Cliente")
+
+    df_clienti = st.session_state.clienti
+    opzioni = ["NUOVO"]
+    if not df_clienti.empty:
+        opzioni += df_clienti["Denominazione"].dropna().astype(str).tolist()
+
+    col_sel, col_chk = st.columns([3, 1])
+    with col_sel:
+        cliente_selezionato = st.selectbox(
+            "Seleziona da rubrica", opzioni, index=0
+        )
+    with col_chk:
+        salva_in_rubrica = st.checkbox("Salva/aggiorna in rubrica")
+
+    if cliente_selezionato != "NUOVO" and not df_clienti.empty:
+        r = df_clienti[df_clienti["Denominazione"] == cliente_selezionato].iloc[0]
+        default_den = r["Denominazione"]
+        default_piva = r["PIVA"]
+        default_cf = r["CF"]
+        default_ind = r["Indirizzo"]
+        default_cap = r["CAP"]
+        default_com = r["Comune"]
+        default_prov = r["Provincia"]
+        default_sdi = r["CodiceDestinatario"]
+        default_pec = r["PEC"]
+    else:
+        default_den = default_piva = default_cf = ""
+        default_ind = default_cap = default_com = default_prov = ""
+        default_sdi = AZIENDA["codice_dest"]
+        default_pec = ""
+
     st.subheader("Dati cliente")
     colc1, colc2 = st.columns(2)
     with colc1:
-        cliente_nome = st.text_input("Denominazione / Nome cliente")
-        cliente_indirizzo = st.text_input("Indirizzo")
-        cliente_cap = st.text_input("CAP")
+        cliente_nome = st.text_input("Denominazione / Nome cliente", value=default_den)
+        cliente_indirizzo = st.text_input("Indirizzo", value=default_ind)
+        cliente_cap = st.text_input("CAP", value=default_cap)
     with colc2:
-        cliente_citta = st.text_input("Comune")
-        cliente_prov = st.text_input("Provincia (sigla)")
-        cliente_piva = st.text_input("Partita IVA (se B2B)")
-        cliente_cf = st.text_input("Codice fiscale (se privato)")
+        cliente_citta = st.text_input("Comune", value=default_com)
+        cliente_prov = st.text_input("Provincia (sigla)", value=default_prov)
+        cliente_piva = st.text_input("Partita IVA (se B2B)", value=default_piva)
+        cliente_cf = st.text_input("Codice fiscale (se privato)", value=default_cf)
 
+    col_sd1, col_sd2 = st.columns(2)
+    with col_sd1:
+        codice_destinatario = st.text_input(
+            "Codice destinatario", value=default_sdi
+        )
+    with col_sd2:
+        pec_destinatario = st.text_input(
+            "PEC destinatario (se B2C/B2B via PEC)", value=default_pec
+        )
+
+    # DATI DOCUMENTO
     st.subheader("Dati documento")
     coltd1, coltd2 = st.columns(2)
     with coltd1:
@@ -392,8 +436,12 @@ with st.form("form_fattura"):
     with colt1:
         descrizione = st.text_area("Descrizione", value="Servizi professionali resi")
     with colt2:
-        imponibile_num = st.number_input("Imponibile EUR", min_value=0.0, value=100.0, step=10.0)
-        iva_percent_num = st.number_input("Aliquota IVA %", min_value=0.0, value=22.0, step=1.0)
+        imponibile_num = st.number_input(
+            "Imponibile EUR", min_value=0.0, value=100.0, step=10.0
+        )
+        iva_percent_num = st.number_input(
+            "Aliquota IVA %", min_value=0.0, value=22.0, step=1.0
+        )
 
     iva_val_num = round(imponibile_num * iva_percent_num / 100, 2)
     totale_num = round(imponibile_num + iva_val_num, 2)
@@ -407,6 +455,7 @@ with st.form("form_fattura"):
     with colm3:
         st.metric("Totale", format_eur(totale_num))
 
+    # PAGAMENTO
     st.markdown("---")
     st.subheader("Pagamento")
     colp1, colp2 = st.columns(2)
@@ -422,16 +471,9 @@ with st.form("form_fattura"):
         )
     with colp2:
         giorni_termine = st.number_input("Giorni termini", min_value=0, value=0, step=1)
-        data_rif_term = st.date_input("Data riferimento termini", value=data_default, format="DD/MM/YYYY")
-
-    st.markdown("---")
-    st.subheader("Dati trasmissione")
-    codice_destinatario = st.text_input(
-        "Codice destinatario", value=AZIENDA["codice_dest"]
-    )
-    pec_destinatario = st.text_input(
-        "PEC destinatario (se B2C/B2B via PEC)", value=AZIENDA["pec"]
-    )
+        data_rif_term = st.date_input(
+            "Data riferimento termini", value=data_default, format="DD/MM/YYYY"
+        )
 
     submitted = st.form_submit_button("Salva fattura e genera PDF + XML")
 
@@ -491,8 +533,32 @@ if submitted:
         "modalita_pagamento_codice": modalita_pagamento_codice,
     }
 
+    # aggiorno rubrica se richiesto
+    if salva_in_rubrica:
+        df_cli = st.session_state.clienti.copy()
+        mask = df_cli["Denominazione"] == cliente_nome
+        nuova_riga = {
+            "Denominazione": cliente_nome,
+            "PIVA": cliente_piva,
+            "CF": cliente_cf,
+            "Indirizzo": cliente_indirizzo,
+            "CAP": cliente_cap,
+            "Comune": cliente_citta,
+            "Provincia": cliente_prov,
+            "CodiceDestinatario": codice_destinatario,
+            "PEC": pec_destinatario,
+            "Tipo": "B2B" if cliente_piva else "B2C",
+        }
+        if not df_cli.empty and mask.any():
+            df_cli.loc[mask, :] = nuova_riga
+        else:
+            df_cli = pd.concat(
+                [df_cli, pd.DataFrame([nuova_riga])], ignore_index=True
+            )
+        st.session_state.clienti = df_cli
+
     pdf_buffer = genera_pdf_fattura(dati)
-    xml_string = genera_xml_fattura(dati)
+    xml_string = gener_xml = genera_xml_fattura(dati)
     pdf_path, xml_path = salva_su_file(pdf_buffer, xml_string, numero)
     registra_in_documenti(dati, pdf_path)
 
